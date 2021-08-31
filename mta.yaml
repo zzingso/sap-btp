@@ -1,0 +1,108 @@
+## Generated mta.yaml based on template version 0.4.0
+## appName = RiskManagement24
+## language=nodejs; multitenant=false
+## approuter=
+_schema-version: '3.1'
+ID: RiskManagement24
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+   
+build-parameters:
+  before-all:
+   - builder: custom
+     commands:
+      - npm install --production
+      - npx -p @sap/cds-dk cds build --production
+
+modules:
+ # --------------------- SERVER MODULE ------------------------
+ - name: RiskManagement24-srv
+ # ------------------------------------------------------------
+   type: nodejs
+   path: gen/srv
+   parameters:
+    buildpack: nodejs_buildpack
+   requires:
+    # Resources extracted from CAP configuration
+    - name: RiskManagement24-db
+    - name: RiskManagement24-uaa
+   provides:
+    - name: srv-api      # required by consumers of CAP services (e.g. approuter)
+      properties:
+        srv-url: ${default-url}
+
+ # -------------------- SIDECAR MODULE ------------------------
+ - name: RiskManagement24-db-deployer
+ # ------------------------------------------------------------
+   type: hdb
+   path: gen/db  
+   parameters:
+     buildpack: nodejs_buildpack
+   requires:
+    # 'hana' and 'xsuaa' resources extracted from CAP configuration
+    - name: RiskManagement24-db
+    - name: RiskManagement24-uaa
+
+  # --------------------  APPROUTER -----------------------------
+ - name: RiskManagement24-approuter
+  # ------------------------------------------------------------
+   type: nodejs
+   path: approuter
+   requires:
+     - name: RiskManagement24-uaa
+     - name: srv-api
+       group: destinations
+       properties:
+         forwardAuthToken: true
+         strictSSL: true
+         name: srv-binding
+         url: '~{srv-url}'
+   build-parameters:
+     requires:
+       - name: RiskManagement24-app
+         artifacts:
+           - ./*
+         target-path: resources
+  # --------------------  UI -----------------------------------
+ - name: RiskManagement24-app
+  # ------------------------------------------------------------
+   type: html5
+   path: app
+   build-parameters:
+     supported-platforms: []
+
+resources:
+ # services extracted from CAP configuration
+ # 'service-plan' can be configured via 'cds.requires.<name>.vcap.plan'
+# ------------------------------------------------------------
+ - name: RiskManagement24-db
+# ------------------------------------------------------------
+   type: com.sap.xs.hdi-container
+   parameters:
+     service: hana  # or 'hanatrial' on trial landscapes
+     service-plan: hdi-shared
+   properties:
+     hdi-service-name: ${service-name}
+# ------------------------------------------------------------
+ - name: RiskManagement24-uaa
+# ------------------------------------------------------------
+   type: org.cloudfoundry.managed-service
+   parameters:
+     service: xsuaa
+     service-plan: application  
+     path: ./xs-security.json
+     config:
+       xsappname: RiskManagement24-${space}    #  name + space dependency
+       role-collections:
+         - name: 'RiskManager24-${space}'
+           description: Manage Risks
+           role-template-references:
+             - $XSAPPNAME.RiskManager24
+         - name: 'RiskViewer24-${space}'
+           description: View Risks
+           role-template-references:
+             - $XSAPPNAME.RiskViewer24
+
+

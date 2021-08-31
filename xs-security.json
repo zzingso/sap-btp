@@ -1,0 +1,33 @@
+{
+  "xsappname": "RiskManagement24",
+  "tenant-mode": "dedicated",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.RiskViewer24",
+      "description": "RiskViewer24"
+    },
+    {
+      "name": "$XSAPPNAME.RiskManager24",
+      "description": "RiskManager24"
+    }
+  ],
+  "attributes": [],
+  "role-templates": [
+    {
+      "name": "RiskViewer24",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.RiskViewer24"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "RiskManager24",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.RiskManager24"
+      ],
+      "attribute-references": []
+    }
+  ]
+}
